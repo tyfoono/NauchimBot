@@ -6,11 +6,10 @@
 # - /unsuball - отписка от всех мероприятий
 
 
-import site
 from aiogram import Bot, types
 from aiogram.utils import executor
 from aiogram.dispatcher import Dispatcher
-
+import sqlite3
 
 #временно
 eventsLinks = {
