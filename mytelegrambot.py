@@ -5,11 +5,16 @@
 # - /suball - подписка на все мероприятия
 # - /unsuball - отписка от всех мероприятий
 
-
+from requests import session
+import vk
 from aiogram import Bot, types
 from aiogram.utils import executor
 from aiogram.dispatcher import Dispatcher
 import sqlite3
+
+vk_token = '9dfa07419dfa07419dfa0741cd9d8619c999dfa9dfa0741ffae5478875654c94509d144'
+
+vk_api = ''
 
 #временно
 eventsLinks = {
@@ -44,6 +49,15 @@ linksKb.row(linkItFest, linkTC)
 linksKb.row(linkOKK, linkNIR)
 linksKb.row(linkIASF, linkVR)
 
+#######################################
+# получение последней записи со стены #
+#######################################
+
+def get_post(owner_id):  # Функция формирования базы участников сообщества в виде списка
+    mas = vk_api.wall.get(owner_id=owner_id, v=5.92, count=1, offset=0)
+    if "#ITfest_2022" in mas['items'][0]['text']:
+        print(mas['items'][0]['text'])
+    return mas
 
 
 #######################
@@ -52,9 +66,10 @@ linksKb.row(linkIASF, linkVR)
 
 @dp.message_handler(commands=['start'])
 async def start(message: types.Message):
+    session = vk.Session(vk_token)
+    vk_api = vk.API(session)
     chat_id = message.chat.id
     first_name = message.chat.first_name
-    username = message.chat.username
     text = f'Привет, {first_name}!👋\n'
     await bot.send_message(chat_id, text, reply_markup=startKb)
     connect = sqlite3.connect('users.db')
@@ -67,7 +82,7 @@ async def start(message: types.Message):
     data = cursor.fetchone()
     if data is None:
         cursor.execute("INSERT INTO login_id VALUES(?,?,?);",
-                       (chat_id, username, 0))
+                       (chat_id, first_name, 0))
         connect.commit()
 
 @dp.message_handler(commands=['bye'])
