@@ -23,7 +23,7 @@ eventsLinks = {
     'VRARFest3D':'nauchim.online'
 }
 
-bot = Bot(token='5123538287:AAEW9KvA8sSyy8HdZcMTxh3Q4AezEVIjUa8')
+bot = Bot(token='5123538287:AAEr4uxOd1VZYCX1-EiPAiab0EO-PwazhCw')
 dp = Dispatcher(bot)
 
 buttonList = types.KeyboardButton('Список мероприятий 🌟')
@@ -54,8 +54,29 @@ linksKb.row(linkIASF, linkVR)
 async def start(message: types.Message):
     chat_id = message.chat.id
     first_name = message.chat.first_name
+    username = message.chat.username
     text = f'Привет, {first_name}!👋\n'
     await bot.send_message(chat_id, text, reply_markup=startKb)
+    connect = sqlite3.connect('users.db')
+    cursor = connect.cursor()
+    cursor.execute("""CREATE TABLE IF NOT EXISTS login_id(
+           id INTEGER, name TEXT, rate INTEGER, mess TEXT
+           )""")
+    connect.commit()
+    cursor.execute(f'SELECT id FROM login_id WHERE id = {chat_id}')
+    data = cursor.fetchone()
+    if data is None:
+        cursor.execute("INSERT INTO login_id VALUES(?,?,?);",
+                       (chat_id, username, 0))
+        connect.commit()
+
+@dp.message_handler(commands=['bye'])
+async def bye(message: types.Message):
+    connect = sqlite3.connect('users.db')
+    cursor = connect.cursor()
+    user_id = message.chat.id
+    cursor.execute(f'DELETE FROM login_id WHERE id = {user_id}')
+    connect.commit()
 
 @dp.message_handler(text=['/contacts', 'Контакты 🤝'])
 async def contacts(message: types.Message):

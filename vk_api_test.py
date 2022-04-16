@@ -11,7 +11,7 @@ def get_posts(owner_id, count, offset):  # Функция формировани
     mas = vk_api.wall.get(owner_id=owner_id, v=5.92, count=count, offset=offset)
     for i in range(count):
         if "#ITfest_2022" in mas['items'][i]['text']:
-            print(mas['items'][i]['text'].encode('utf8').decode('utf8', 'ignore'))
+            print(mas['items'][i]['text'])
     return mas
 
 
