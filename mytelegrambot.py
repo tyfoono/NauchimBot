@@ -79,9 +79,10 @@ async def events(message: types.Message):
 async def linksHandler(call: types.CallbackQuery):
     chat_id = call.message.chat.id
     text = 'Ошибка ⚠'
-    path = 'images/it-fest.jpg'
+    path = 'images/error.png'
     vk_url = 'https://vk.com/nauchim.online'
     site_url = 'https://www.научим.online/'
+    data = 'error'
     match call.data:
         case 'Neuro':
             text = '🧠 «Нейрофест» - Всероссийский фестиваль нейротехнологий\n\n\n'
@@ -95,6 +96,7 @@ async def linksHandler(call: types.CallbackQuery):
             text += f' • Группа ВКонтакте: {vk_url}\n'
             text += f' • Сайт мероприятия: {site_url}'
             path = 'images/neuro.jpg'
+            data = 'subNeuro'
         case 'ItFest':
             text = '💻 «IT-FEST» - Международный фестиваль информационных технологий\n\n\n'
             text += '✔️ Хочешь погрузиться в мир информационных технологий, принять участие в мастер-классах от высококвалифицированных специалистов крупных IT-компаний и уже сейчас начать реализовывать себя как программиста?\n\n'
@@ -107,6 +109,7 @@ async def linksHandler(call: types.CallbackQuery):
             text += f' • Группа ВКонтакте: {vk_url}\n'
             text += f' • Сайт мероприятия: {site_url}'
             path = 'images/it-fest.jpg'
+            data='subItFest'
         case 'OKK':
             text = '🎉 Фестиваль общекультурных компетенций\n\n\n'
             text += '✔️СЕМЬ тематических мероприятий\n'
@@ -125,6 +128,7 @@ async def linksHandler(call: types.CallbackQuery):
             text += f' • Группа ВКонтакте: {vk_url}\n'
             text += f' • Сайт мероприятия: {site_url}'
             path = 'images/okk.jpg'
+            data = 'subOKK'
         case 'IASF':
             text = '🛰 Международный аэрокосмический фестиваль (IASF)\n\n\n'
             text += '✔️ Онлайн-площадка, объединяющая всех увлечены космосом и авиацией\n\n'
@@ -138,6 +142,7 @@ async def linksHandler(call: types.CallbackQuery):
             text += f' • Группа ВКонтакте: {vk_url}\n'
             text += f' • Сайт мероприятия: {site_url}'
             path = 'images/aerospace.jpg'
+            data = 'subIASF'
         case 'IW':
             text = '🔬 «Невидимый мир» - Всероссийский конкурс по микробиологии\n\n\n'
             text += '✔️ Нравится изучать микроорганизмы?\n\n'
@@ -152,6 +157,7 @@ async def linksHandler(call: types.CallbackQuery):
             text += f' • Группа ВКонтакте: {vk_url}\n'
             text += f' • Сайт мероприятия: {site_url}'
             path = 'images/iw.jpg'
+            data = 'subIW'
         case 'TC':
             text = '🌟 «TechnoCom» - Международный конкурс детских инженерных команд\n\n\n'
             text += '✔️ Мероприятие для всех, кто интересуется техническим творчеством, актуальными тенденциями развития науки и технологии\n\n'
@@ -164,6 +170,7 @@ async def linksHandler(call: types.CallbackQuery):
             text += f' • Группа ВКонтакте: {vk_url}\n'
             text += f' • Сайт мероприятия: {site_url}'
             path = 'images/tc.jpg'
+            data = 'subTC'
         case 'VR':
             text = '🕶 VR/AR Fest - Международный фестиваль 3D-моделирования и программирования\n\n\n'
             text += '✔️ Мероприятие для всех, кто интересуется техническим творчеством, актуальными тенденциями развития науки и технологии\n\n'
@@ -175,6 +182,7 @@ async def linksHandler(call: types.CallbackQuery):
             text += f' • Группа ВКонтакте: {vk_url}\n'
             text += f' • Сайт мероприятия: {site_url}'
             path = 'images/vrar.png'
+            data = 'subVR'
         case 'NIR':
             text = '📖 Всероссийский конкурс научно-исследовательских работ\n\n\n'
             text += '✔️ Творческий конкурс будет интересен начинающим инженерам и изобретателям со стажем\n\n'
@@ -187,9 +195,10 @@ async def linksHandler(call: types.CallbackQuery):
             text += f' • Группа ВКонтакте: {vk_url}\n'
             text += f' • Сайт мероприятия: {site_url}'
             path = 'images/vrar.png'
+            data = 'subNIR'
     keyVkRedirect = types.InlineKeyboardButton('Перейти в группу ВКонтакте!', url=vk_url)
     keySiteRedirect = types.InlineKeyboardButton('Перейти на сайт!', url=site_url)
-    keySub = types.InlineKeyboardButton('Подписаться на рассылку!', callback_data=call.data)
+    keySub = types.InlineKeyboardButton('Подписаться на рассылку!', callback_data=data)
     kbListFunctions = types.InlineKeyboardMarkup().row(keyVkRedirect).row(keySiteRedirect).row(keySub)
     await bot.send_photo(chat_id, open(path, 'rb'), caption=text, reply_markup=kbListFunctions) 
 
