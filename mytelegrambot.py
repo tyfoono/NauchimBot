@@ -59,7 +59,7 @@ async def start(message: types.Message):
     connect = sqlite3.connect('users.db')
     cursor = connect.cursor()
     cursor.execute("""CREATE TABLE IF NOT EXISTS login_id(
-           id INTEGER,
+           id INTEGER PRIMARY KEY,
            name TEXT, 
            Neuro INTEGER,
            ItFest INTEGER,
@@ -73,8 +73,8 @@ async def start(message: types.Message):
     connect.commit()
     cursor.execute(f'SELECT id FROM login_id WHERE id = {chat_id}')
     if cursor.fetchone() is None:
-        cursor.execute("INSERT INTO login_id VALUES(?,?,?);",
-                       (chat_id, first_name, 0))
+        cursor.execute("INSERT INTO login_id VALUES(?,?,?,?,?,?,?,?,?,?);",
+                       (chat_id, first_name, 0, 0, 0, 0, 0, 0, 0, 0))
         connect.commit()
 
 @dp.message_handler(commands=['bye'])
