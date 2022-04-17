@@ -5,14 +5,21 @@
 # - /suball - подписка на все мероприятия
 # - /unsuball - отписка от всех мероприятий
 
-from requests import session
+import sys
 import vk
 from aiogram import Bot, types
 from aiogram.utils import executor
 from aiogram.dispatcher import Dispatcher
 import sqlite3
 
+connect = sqlite3.connect('users.db')
+cursor = connect.cursor()
+
+sys.stdin.reconfigure(encoding='utf-8')
+sys.stdout.reconfigure(encoding='utf-8')
+
 vk_token = '9dfa07419dfa07419dfa0741cd9d8619c999dfa9dfa0741ffae5478875654c94509d144'
+chat_id = ''
 
 bot = Bot(token='5123538287:AAEr4uxOd1VZYCX1-EiPAiab0EO-PwazhCw')
 dp = Dispatcher(bot)
@@ -35,29 +42,11 @@ linksKb.row(linkItFest, linkTC)
 linksKb.row(linkOKK, linkNIR)
 linksKb.row(linkIASF, linkVR)
 
-#######################################
-# получение последней записи со стены #
-#######################################
+############################
+# функции для работы с sal #
+############################
 
-def get_post(owner_id, tag):  # Функция формирования базы участников сообщества в виде списка
-    session = vk.Session(vk_token)
-    vk_api = vk.API(session)
-    mas = vk_api.wall.get(owner_id=owner_id, v=5.131, count=1, offset=0)
-    if tag in mas['items'][0]['text']:
-        return mas['items'][0]['id']
-
-#######################
-# обработка сообщений #
-#######################
-
-@dp.message_handler(commands=['start'])
-async def start(message: types.Message):
-    chat_id = message.chat.id
-    first_name = message.chat.first_name
-    text = f'Привет, {first_name}!👋\n'
-    await bot.send_message(chat_id, text, reply_markup=startKb)
-    connect = sqlite3.connect('users.db')
-    cursor = connect.cursor()
+def dbExecute(chat_id, first_name):
     cursor.execute("""CREATE TABLE IF NOT EXISTS login_id(
            id INTEGER PRIMARY KEY,
            name TEXT, 
@@ -74,8 +63,33 @@ async def start(message: types.Message):
     cursor.execute(f'SELECT id FROM login_id WHERE id = {chat_id}')
     if cursor.fetchone() is None:
         cursor.execute("INSERT INTO login_id VALUES(?,?,?,?,?,?,?,?,?,?);",
-                       (chat_id, first_name, 0, 0, 0, 0, 0, 0, 0, 0))
+                       (first_name, 0, 0, 0, 0, 0, 0, 0, 0))
         connect.commit()
+
+#######################################
+# получение последней записи со стены #
+#######################################
+
+async def get_posts(chat_id, owner_id):
+    session = vk.Session(access_token=vk_token) 
+    vk_api = vk.API(session)
+    mas = vk_api.wall.get(owner_id=owner_id, v=5.92, count=1, offset=0)
+    if "#ITfest_2022" in mas['items'][0]['text']:
+        await bot.send_message(chat_id, mas['items'][0]['text'])
+    return mas
+
+#######################
+# обработка сообщений #
+#######################
+
+@dp.message_handler(commands=['start'])
+async def start(message: types.Message):
+    chat_id = message.chat.id
+    first_name = message.chat.first_name
+    text = f'Привет, {first_name}!👋\n'
+    await bot.send_message(chat_id, text, reply_markup=startKb)
+    await get_posts(chat_id, '-210985709')
+    dbExecute(chat_id, first_name)
 
 @dp.message_handler(commands=['bye'])
 async def bye(message: types.Message):
@@ -228,6 +242,7 @@ async def linksHandler(call: types.CallbackQuery):
     keySub = types.InlineKeyboardButton('Подписаться на рассылку!', callback_data=data)
     kbListFunctions = types.InlineKeyboardMarkup().row(keyVkRedirect).row(keySiteRedirect).row(keySub)
     await bot.send_photo(chat_id, open(path, 'rb'), caption=text, reply_markup=kbListFunctions) 
+
 
 
 executor.start_polling(dp)
