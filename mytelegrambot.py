@@ -14,18 +14,6 @@ import sqlite3
 
 vk_token = '9dfa07419dfa07419dfa0741cd9d8619c999dfa9dfa0741ffae5478875654c94509d144'
 
-#временно
-eventsLinks = {
-    'TechnoCom':'technocom2022',
-    'ITfest_2022':'itfest2022',
-    'IASF2022':'aerospaceproject',
-    'ФестивальОКК':'okk_fest',
-    'Нейрофест':'neurofest2022',
-    'НевдимыйМир':'nauchim.online',
-    'КонкурсНИР':'nauchim.online',
-    'VRARFest3D':'nauchim.online'
-}
-
 bot = Bot(token='5123538287:AAEr4uxOd1VZYCX1-EiPAiab0EO-PwazhCw')
 dp = Dispatcher(bot)
 
@@ -51,15 +39,12 @@ linksKb.row(linkIASF, linkVR)
 # получение последней записи со стены #
 #######################################
 
-
-
-def get_post(owner_id):  # Функция формирования базы участников сообщества в виде списка
+def get_post(owner_id, tag):  # Функция формирования базы участников сообщества в виде списка
     session = vk.Session(vk_token)
     vk_api = vk.API(session)
-    mas = vk_api.wall.get(owner_id=owner_id, v=5.92, count=1, offset=0)
-    if "#ITfest_2022" in mas['items'][0]['text']:
-        print(mas['items'][0]['id'])
-    return mas
+    mas = vk_api.wall.get(owner_id=owner_id, v=5.131, count=1, offset=0)
+    if tag in mas['items'][0]['text']:
+        return mas['items'][0]['id']
 
 #######################
 # обработка сообщений #
@@ -67,7 +52,6 @@ def get_post(owner_id):  # Функция формирования базы уч
 
 @dp.message_handler(commands=['start'])
 async def start(message: types.Message):
-    get_post('-210985709')
     chat_id = message.chat.id
     first_name = message.chat.first_name
     text = f'Привет, {first_name}!👋\n'
@@ -77,7 +61,14 @@ async def start(message: types.Message):
     cursor.execute("""CREATE TABLE IF NOT EXISTS login_id(
            id INTEGER,
            name TEXT, 
-           rate INTEGER
+           Neuro INTEGER,
+           ItFest INTEGER,
+           Okk INTEGER,
+           IASF INTEGER,
+           IW INTEGER,
+           TechnoCom INTEGER,
+           VRAR INTEGER,
+           NIR INTEGER
            )""")
     connect.commit()
     cursor.execute(f'SELECT id FROM login_id WHERE id = {chat_id}')
