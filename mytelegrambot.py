@@ -5,6 +5,7 @@
 # - /suball - подписка на все мероприятия
 # - /unsuball - отписка от всех мероприятий
 
+import re
 import sys
 import vk
 from aiogram import Bot, types
@@ -21,7 +22,7 @@ sys.stdout.reconfigure(encoding='utf-8')
 vk_token = '9dfa07419dfa07419dfa0741cd9d8619c999dfa9dfa0741ffae5478875654c94509d144'
 chat_id = ''
 
-bot = Bot(token='5123538287:AAEr4uxOd1VZYCX1-EiPAiab0EO-PwazhCw')
+bot = Bot(token='5123538287:AAHDRsRk9uBYQ_01WGIJcRmMd7xJNVZNWOI')
 dp = Dispatcher(bot)
 
 buttonList = types.KeyboardButton('Список мероприятий 🌟')
@@ -63,8 +64,15 @@ def dbExecute(chat_id, first_name):
     cursor.execute(f'SELECT id FROM login_id WHERE id = {chat_id}')
     if cursor.fetchone() is None:
         cursor.execute("INSERT INTO login_id VALUES(?,?,?,?,?,?,?,?,?,?);",
-                       (first_name, 0, 0, 0, 0, 0, 0, 0, 0))
+                       (chat_id, first_name, 0, 0, 0, 0, 0, 0, 0, 0))
         connect.commit()
+
+def get_name(chat_id):
+    cursor.execute(f'SELECT name FROM login_id WHERE id = {chat_id}')
+    line = str(cursor.fetchone())
+    for char in '()\',':  
+        line = line.replace(char, '')
+    return line  
 
 #######################################
 # получение последней записи со стены #
@@ -93,16 +101,18 @@ async def start(message: types.Message):
 
 @dp.message_handler(commands=['bye'])
 async def bye(message: types.Message):
-    connect = sqlite3.connect('users.db')
-    cursor = connect.cursor()
-    user_id = message.chat.id
-    cursor.execute(f'DELETE FROM login_id WHERE id = {user_id}')
+    chat_id = message.chat.id
+    first_name = get_name(chat_id)
+    await bot.send_message(chat_id, f'Пока, {first_name}, ☹...')
+    cursor.execute(f'DELETE FROM login_id WHERE id = {chat_id}')
     connect.commit()
+    
 
 @dp.message_handler(text=['/contacts', 'Контакты 🤝'])
 async def contacts(message: types.Message):
     chat_id = message.chat.id
-    text = f'Если у вас возникли какие-либо вопросы, {message.chat.first_name} ,то вот наши контакты:\n\n • Группа ВКонтакте Научим.online https://vk.com/nauchim.online\n • Сайт с мероприятиями https://www.научим.online'
+    first_name = get_name(chat_id)
+    text = f'Если у вас возникли какие-либо вопросы, {first_name} ,то вот наши контакты:\n\n • Группа ВКонтакте Научим.online https://vk.com/nauchim.online\n • Сайт с мероприятиями https://www.научим.online'
     await bot.send_message(chat_id, text)
 
 
