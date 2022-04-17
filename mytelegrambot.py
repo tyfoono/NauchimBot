@@ -20,9 +20,8 @@ cursor = connect.cursor()
 sys.stdin.reconfigure(encoding='utf-8')
 sys.stdout.reconfigure(encoding='utf-8')
 
-vk_token = '9dfa07419dfa07419dfa0741cd9d8619c999dfa9dfa0741ffae5478875654c94509d144'
-chat_id = ''
-first = ''
+vk_token = 'token'
+
 
 bot = Bot(token='5123538287:AAHDRsRk9uBYQ_01WGIJcRmMd7xJNVZNWOI')
 dp = Dispatcher(bot)
