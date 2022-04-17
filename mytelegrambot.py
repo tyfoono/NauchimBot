@@ -76,14 +76,14 @@ subs = {
     'subVRAR':False
 }
 lastId = {
-    'Neuro':False,
-    'ItFest':False,
-    'TechnoCom':False,
-    'IASF':False,
-    'Okk':False,
-    'IW':False,
-    'NIR':False,
-    'VRAR':False
+    'Neuro':0,
+    'ItFest':0,
+    'TechnoCom':0,
+    'IASF':0,
+    'Okk':0,
+    'IW':0,
+    'NIR':0,
+    'VRAR':0
 }
 lastPosts = {
     'Neuro':None,
@@ -110,24 +110,17 @@ first = {
 # функции для работы с sal #
 ############################
 
-def dbExecute(chat_id, first_name):
+def dbExecute(chat_id, first_name, username):
     cursor.execute("""CREATE TABLE IF NOT EXISTS login_id(
            id INTEGER PRIMARY KEY,
            name TEXT, 
-           Neuro INTEGER,
-           ItFest INTEGER,
-           Okk INTEGER,
-           IASF INTEGER,
-           IW INTEGER,
-           TechnoCom INTEGER,
-           VRAR INTEGER,
-           NIR INTEGER
+           username TEXT
            )""")
     connect.commit()
     cursor.execute(f'SELECT id FROM login_id WHERE id = {chat_id}')
     if cursor.fetchone() is None:
-        cursor.execute("INSERT INTO login_id VALUES(?,?,?,?,?,?,?,?,?,?);",
-                       (chat_id, first_name, 0, 0, 0, 0, 0, 0, 0, 0))
+        cursor.execute("INSERT INTO login_id VALUES(?,?,?);",
+                       (chat_id, first_name, username))
         connect.commit()
 
 def get_name(chat_id):
@@ -143,38 +136,43 @@ def get_name(chat_id):
 #######################################
 
 
-async def get_posts():
+async def get_post(chat_id, key):
     session = vk.Session(access_token=vk_token) 
     vk_api = vk.API(session)
-    for key in list(owners.keys()):
-        if subs.get('sub' + key) == True:
-            owner_id = owners.get(key)
-            mas = vk_api.wall.get(owner_id=owner_id, v=5.92, count=1, offset=0)
-            if mas['items'][0]['id'] != lastId.get(key):  
-                lastPosts[key] = mas['items'][0]['text']
-                lastId[key] = mas['items'][0]['id']
-            else:
-                lastPosts[key] = None
-
+    new = False
+    owner_id = owners.get(key)
+    post = vk_api.wall.get(owner_id=owner_id, v=5.92, count=1, offset=0)['items'][0]
+    if post['id'] != lastId.get(key):  
+        if tags.get(key) in post['text']:
+            text = first.get(key) + '\n\n\n'
+            text += post['text']
+            lastId[key] = post['id']
+            new = True
+            await bot.send_message(chat_id, text) 
+    return new
 
 #######################
 # обработка сообщений #
 #######################
 
 @dp.message_handler(commands=['update'])
-async def update():
-    pass
+async def update(message: types.Message):
+    chat_id = message.chat.id
+    for key in list(owners.keys()):
+        if sub.get('sub' + key) == True:
+            new = await get_post(chat_id, key)
+            if new == False:
+                await bot.send_message(chat_id, f'{first.get(key)}\nПока ничего нового...')
 
 @dp.message_handler(commands=['start'])
 async def start(message: types.Message):
-    global chat_id
     chat_id = message.chat.id
     first_name = message.chat.first_name
+    username = message.chat.username
     text = f'Привет, {first_name}!👋\n'
     await bot.send_message(chat_id, text, reply_markup=startKb)
-    dbExecute(chat_id, first_name)
-    await get_posts()
-
+    dbExecute(chat_id, first_name, username)
+    
 @dp.message_handler(commands=['bye'])
 async def bye(message: types.Message):
     chat_id = message.chat.id
@@ -183,7 +181,6 @@ async def bye(message: types.Message):
     cursor.execute(f'DELETE FROM login_id WHERE id = {chat_id}')
     connect.commit()
     
-
 @dp.message_handler(text=['/contacts', 'Контакты 🤝'])
 async def contacts(message: types.Message):
     chat_id = message.chat.id
@@ -343,7 +340,7 @@ async def linksHandler(call: types.CallbackQuery):
 
 
 async def scheduler():
-    aioschedule.every(30).seconds.do(get_posts)
+    aioschedule.every(30).seconds.do(get_post)
     while True:
         await aioschedule.run_pending()
         await asyncio.sleep(1)
