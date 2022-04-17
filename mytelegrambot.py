@@ -67,14 +67,14 @@ owners = {
     'VRAR':'-200248443'
 }
 subs = {
-    'Neuro':False,
-    'ItFest':False,
-    'TechnoCom':False,
-    'IASF':False,
-    'Okk':False,
-    'IW':False,
-    'NIR':False,
-    'VRAR':False
+    'subNeuro':True,
+    'subItFest':False,
+    'subTechnoCom':False,
+    'subIASF':False,
+    'subOkk':False,
+    'subIW':False,
+    'subNIR':False,
+    'subVRAR':False
 }
 lastId = {
     'Neuro':False,
@@ -125,11 +125,15 @@ def get_name(chat_id):
 #######################################
 
 
-async def get_posts(event):
+async def get_posts(chat_id):
     session = vk.Session(access_token=vk_token) 
     vk_api = vk.API(session)
-    mas = vk_api.wall.get(owner_id=owner_id, v=5.92, count=1, offset=0)
-    
+    for key in list(owners.keys()):
+        if subs.get('sub' + key) == True:
+            owner_id = owners.get(key)
+            mas = vk_api.wall.get(owner_id=owner_id, v=5.92, count=1, offset=0)
+            text = mas['items'][0]['text']
+            await bot.send_message(chat_id, text)
     return mas
 
 
@@ -140,8 +144,8 @@ async def get_posts(event):
 
 @dp.message_handler(commands=['start'])
 async def start(message: types.Message):
-    await get_posts('-210985709', 'Neuro')
     chat_id = message.chat.id
+    await get_posts(chat_id)
     first_name = message.chat.first_name
     text = f'Привет, {first_name}!👋\n'
     await bot.send_message(chat_id, text, reply_markup=startKb)
@@ -176,10 +180,10 @@ async def events(message: types.Message):
 
 @dp.callback_query_handler(text=list(subs.keys()))
 async def sub(call: types.CallbackQuery):
-    if subs[call.data.removeprefix('sub')] == True:
+    if subs.get(call.data) == True:
         await bot.send_message(call.message.chat.id, 'Вы уже подписаны на рассылку этого мероприятия!')
     else:
-        subs[call.data.removeprefix('sub')] = True
+        subs[call.data] = True
         await bot.send_message(call.message.chat.id, 'Теперь вы подписаны на рассылку новостей мероприятия!')
 
 @dp.callback_query_handler(text=['Neuro', 'ItFest', 'OKK', 'IASF', 'IW', 'TC', 'VR', 'NIR'])
