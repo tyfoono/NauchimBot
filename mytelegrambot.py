@@ -5,13 +5,15 @@
 # - /suball - подписка на все мероприятия
 # - /unsuball - отписка от всех мероприятий
 
-import re
+from threading import Thread
+import schedule
 import sys
 import vk
 from aiogram import Bot, types
 from aiogram.utils import executor
 from aiogram.dispatcher import Dispatcher
 import sqlite3
+from time import sleep
 
 connect = sqlite3.connect('users.db')
 cursor = connect.cursor()
@@ -21,6 +23,7 @@ sys.stdout.reconfigure(encoding='utf-8')
 
 vk_token = '9dfa07419dfa07419dfa0741cd9d8619c999dfa9dfa0741ffae5478875654c94509d144'
 chat_id = ''
+first = ''
 
 bot = Bot(token='5123538287:AAHDRsRk9uBYQ_01WGIJcRmMd7xJNVZNWOI')
 dp = Dispatcher(bot)
@@ -42,6 +45,48 @@ linksKb.row(linkNeuro, linkIW)
 linksKb.row(linkItFest, linkTC)
 linksKb.row(linkOKK, linkNIR)
 linksKb.row(linkIASF, linkVR)
+
+tags = {
+    'Neuro':'Нейрофест',
+    'ItFest':'ITFest_2022',
+    'TechnoCom':'TechnoCom',
+    'IASF':'IASF2022',
+    'Okk':'ФестивальОКК',
+    'IW':'НевидимыйМир',
+    'NIR':'КонкурсНИР',
+    'VRAR':'VRARFest3D'
+}
+owners = {
+    'Neuro':'-211803420',
+    'ItFest':'-210985709',
+    'TechnoCom':'-210998761',
+    'IASF':'-196557207',
+    'Okk':'-211638918',
+    'IW':'-200248443',
+    'NIR':'-200248443',
+    'VRAR':'-200248443'
+}
+subs = {
+    'Neuro':False,
+    'ItFest':False,
+    'TechnoCom':False,
+    'IASF':False,
+    'Okk':False,
+    'IW':False,
+    'NIR':False,
+    'VRAR':False
+}
+lastId = {
+    'Neuro':False,
+    'ItFest':False,
+    'TechnoCom':False,
+    'IASF':False,
+    'Okk':False,
+    'IW':False,
+    'NIR':False,
+    'VRAR':False
+}
+
 
 ############################
 # функции для работы с sal #
@@ -74,29 +119,32 @@ def get_name(chat_id):
         line = line.replace(char, '')
     return line  
 
+
 #######################################
 # получение последней записи со стены #
 #######################################
 
-async def get_posts(chat_id, owner_id):
+
+async def get_posts(event):
     session = vk.Session(access_token=vk_token) 
     vk_api = vk.API(session)
     mas = vk_api.wall.get(owner_id=owner_id, v=5.92, count=1, offset=0)
-    if "#ITfest_2022" in mas['items'][0]['text']:
-        await bot.send_message(chat_id, mas['items'][0]['text'])
+    
     return mas
+
 
 #######################
 # обработка сообщений #
 #######################
 
+
 @dp.message_handler(commands=['start'])
 async def start(message: types.Message):
+    await get_posts('-210985709', 'Neuro')
     chat_id = message.chat.id
     first_name = message.chat.first_name
     text = f'Привет, {first_name}!👋\n'
     await bot.send_message(chat_id, text, reply_markup=startKb)
-    await get_posts(chat_id, '-210985709')
     dbExecute(chat_id, first_name)
 
 @dp.message_handler(commands=['bye'])
@@ -126,7 +174,15 @@ async def events(message: types.Message):
 # обработка событий #
 #####################
 
-@dp.callback_query_handler()
+@dp.callback_query_handler(text=list(subs.keys()))
+async def sub(call: types.CallbackQuery):
+    if subs[call.data.removeprefix('sub')] == True:
+        await bot.send_message(call.message.chat.id, 'Вы уже подписаны на рассылку этого мероприятия!')
+    else:
+        subs[call.data.removeprefix('sub')] = True
+        await bot.send_message(call.message.chat.id, 'Теперь вы подписаны на рассылку новостей мероприятия!')
+
+@dp.callback_query_handler(text=['Neuro', 'ItFest', 'OKK', 'IASF', 'IW', 'TC', 'VR', 'NIR'])
 async def linksHandler(call: types.CallbackQuery):
     chat_id = call.message.chat.id
     text = 'Ошибка ⚠'
@@ -136,6 +192,7 @@ async def linksHandler(call: types.CallbackQuery):
     data = 'error'
     match call.data:
         case 'Neuro':
+            first = '🧠 «Нейрофест» - Всероссийский фестиваль нейротехнологий'
             text = '🧠 «Нейрофест» - Всероссийский фестиваль нейротехнологий\n\n\n'
             text += '✔️ Интересуетесь работой мозга, нейрокомпьютерными интерфейсами, искусственным интеллектом и когнитивными исследованиями?\n\n'
             text +=  'Специально для вас открывается Всероссийский фестиваль нейротехнологий «Нейрофест»! На нём вас ждут научно-популярные лекции экспертов, мастер-классы от партнеров, где участники, даже самые маленькие, познакомятся с основными трендами и достижениями нейронаук и технологий.\n\n\n'
@@ -149,6 +206,7 @@ async def linksHandler(call: types.CallbackQuery):
             path = 'images/neuro.jpg'
             data = 'subNeuro'
         case 'ItFest':
+            first = '💻 «IT-FEST» - Международный фестиваль информационных технологий'
             text = '💻 «IT-FEST» - Международный фестиваль информационных технологий\n\n\n'
             text += '✔️ Хочешь погрузиться в мир информационных технологий, принять участие в мастер-классах от высококвалифицированных специалистов крупных IT-компаний и уже сейчас начать реализовывать себя как программиста?\n\n'
             text += 'Тогда добро пожаловать на самый масштабный IT фестиваль, где ты получишь уникальную возможность выйти на международную арену и вырасти из Junior-разработчика в Middle в самый короткий срок, а также расширить свой профессиональный круг знакомств.\n\n\n'
@@ -156,12 +214,13 @@ async def linksHandler(call: types.CallbackQuery):
             text += ' • 7-17 лет\n\n\n'          
             text += '🌐 Ссылки: \n\n'
             vk_url = 'https://vk.com/itfest2022'
-            site_url  = 'https://www.научим.online/it-fest-2022'
+            site_url = 'https://www.научим.online/it-fest-2022'
             text += f' • Группа ВКонтакте: {vk_url}\n'
             text += f' • Сайт мероприятия: {site_url}'
             path = 'images/it-fest.jpg'
-            data='subItFest'
+            data = 'subItFest'
         case 'OKK':
+            first = '🎉 Фестиваль общекультурных компетенций'
             text = '🎉 Фестиваль общекультурных компетенций\n\n\n'
             text += '✔️СЕМЬ тематических мероприятий\n'
             text += '✔️СЕМЬ творческих заданий\n'
@@ -179,8 +238,9 @@ async def linksHandler(call: types.CallbackQuery):
             text += f' • Группа ВКонтакте: {vk_url}\n'
             text += f' • Сайт мероприятия: {site_url}'
             path = 'images/okk.jpg'
-            data = 'subOKK'
+            data = 'subOkk'
         case 'IASF':
+            first = '🛰 Международный аэрокосмический фестиваль (IASF)'
             text = '🛰 Международный аэрокосмический фестиваль (IASF)\n\n\n'
             text += '✔️ Онлайн-площадка, объединяющая всех увлечены космосом и авиацией\n\n'
             text += '✔️ Фестиваль соберет самые яркие мероприятия и ключевые космические события всей страны\n\n'
@@ -195,6 +255,7 @@ async def linksHandler(call: types.CallbackQuery):
             path = 'images/aerospace.jpg'
             data = 'subIASF'
         case 'IW':
+            first = '🔬 «Невидимый мир» - Всероссийский конкурс по микробиологии'
             text = '🔬 «Невидимый мир» - Всероссийский конкурс по микробиологии\n\n\n'
             text += '✔️ Нравится изучать микроорганизмы?\n\n'
             text += '✔️ Считаешь себя будущим микробиологом?\n\n'
@@ -210,6 +271,7 @@ async def linksHandler(call: types.CallbackQuery):
             path = 'images/iw.jpg'
             data = 'subIW'
         case 'TC':
+            first = '🌟 «TechnoCom» - Международный конкурс детских инженерных команд'
             text = '🌟 «TechnoCom» - Международный конкурс детских инженерных команд\n\n\n'
             text += '✔️ Мероприятие для всех, кто интересуется техническим творчеством, актуальными тенденциями развития науки и технологии\n\n'
             text += '✔️ Собирайте команду и испытайте свои силы в работе над актуальными и перспективными проектами!\n\n\n'
@@ -221,8 +283,9 @@ async def linksHandler(call: types.CallbackQuery):
             text += f' • Группа ВКонтакте: {vk_url}\n'
             text += f' • Сайт мероприятия: {site_url}'
             path = 'images/tc.jpg'
-            data = 'subTC'
+            data = 'subTechnoCom'
         case 'VR':
+            first = '🕶 VR/AR Fest - Международный фестиваль 3D-моделирования и программирования\n\n\n'
             text = '🕶 VR/AR Fest - Международный фестиваль 3D-моделирования и программирования\n\n\n'
             text += '✔️ Мероприятие для всех, кто интересуется техническим творчеством, актуальными тенденциями развития науки и технологии\n\n'
             text += '✔️ Собирайте команду и испытайте свои силы в работе над актуальными и перспективными проектами!\n\n\n'
@@ -233,8 +296,9 @@ async def linksHandler(call: types.CallbackQuery):
             text += f' • Группа ВКонтакте: {vk_url}\n'
             text += f' • Сайт мероприятия: {site_url}'
             path = 'images/vrar.png'
-            data = 'subVR'
+            data = 'subVRAR'
         case 'NIR':
+            first = '📖 Всероссийский конкурс научно-исследовательских работ\n\n\n'
             text = '📖 Всероссийский конкурс научно-исследовательских работ\n\n\n'
             text += '✔️ Творческий конкурс будет интересен начинающим инженерам и изобретателям со стажем\n\n'
             text += '✔️ Напишите научное исследование на одну из ДЕВЯТИ тем!\n\n'
@@ -253,6 +317,17 @@ async def linksHandler(call: types.CallbackQuery):
     kbListFunctions = types.InlineKeyboardMarkup().row(keyVkRedirect).row(keySiteRedirect).row(keySub)
     await bot.send_photo(chat_id, open(path, 'rb'), caption=text, reply_markup=kbListFunctions) 
 
+########################
+# запуск по расписанию #
+########################
 
+def scheduler():
+    schedule.every().hour.do(get_posts)
+    while True:
+        schedule.run_pending()
+        sleep(1)
+
+t = Thread(target=scheduler)
+t.start()
 
 executor.start_polling(dp)
