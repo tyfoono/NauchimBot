@@ -115,6 +115,8 @@ first = {
 # функции для работы с sal #
 ############################
 
+# инициализация базы данных
+
 def dbExecute(chat_id, first_name, username):
     cursor.execute("""CREATE TABLE IF NOT EXISTS login_id(
            id INTEGER PRIMARY KEY,
@@ -127,6 +129,8 @@ def dbExecute(chat_id, first_name, username):
         cursor.execute("INSERT INTO login_id VALUES(?,?,?);",
                        (chat_id, first_name, username))
         connect.commit()
+
+#получение имени пользователя
 
 def get_name(chat_id):
     cursor.execute(f'SELECT name FROM login_id WHERE id = {chat_id}')
@@ -160,6 +164,8 @@ async def get_post(chat_id,key):
 # обработка сообщений #
 #######################
 
+# путеводитель
+
 @dp.message_handler(text=['/help', 'Путеводитель по боту 🧭'])
 def help(message: types.Message):
     text = 'Путеводитель по боту 🧭\n\n\n'
@@ -177,6 +183,8 @@ def help(message: types.Message):
     text +='   удаляет данные о пользователе из базы данных\n\n'
     bot.send_message(message.chat.id, text)
 
+# обновление данных записей
+
 @dp.message_handler(text=['/update', 'Проверить на наличие новых записей 💬'])
 async def update(message: types.Message):
     chat_id = message.chat.id
@@ -186,6 +194,8 @@ async def update(message: types.Message):
             if new == False:
                 await bot.send_message(chat_id, f'{first.get(key)}\nПока ничего нового...')
 
+# начальное сообщение
+
 @dp.message_handler(commands=['start'])
 async def start(message: types.Message):
     chat_id = message.chat.id
@@ -194,7 +204,9 @@ async def start(message: types.Message):
     text = f'Привет, {first_name}!👋\n'
     await bot.send_message(chat_id, text, reply_markup=startKb)
     dbExecute(chat_id, first_name, username)
-    
+
+# удаление из базы данных
+
 @dp.message_handler(commands=['bye'])
 async def bye(message: types.Message):
     chat_id = message.chat.id
@@ -202,7 +214,9 @@ async def bye(message: types.Message):
     await bot.send_message(chat_id, f'Пока, {first_name}, ☹...')
     cursor.execute(f'DELETE FROM login_id WHERE id = {chat_id}')
     connect.commit()
-    
+
+# вывод контактов
+
 @dp.message_handler(text=['/contacts', 'Контакты 🤝'])
 async def contacts(message: types.Message):
     chat_id = message.chat.id
@@ -210,17 +224,23 @@ async def contacts(message: types.Message):
     text = f'Если у вас возникли какие-либо вопросы, {first_name} ,то вот наши контакты:\n\n • Группа ВКонтакте Научим.online https://vk.com/nauchim.online\n • Сайт с мероприятиями https://www.научим.online'
     await bot.send_message(chat_id, text)
 
+# вывод списка мероприятий
+
 @dp.message_handler(text=['/list', 'Список мероприятий 🌟'])
 async def events(message: types.Message):
     chat_id = message.chat.id
     text = 'Вот список наших мероприятий: '
     await bot.send_message(chat_id, text, reply_markup=linksKb)
 
+# подписка на все мероприятия
+
 @dp.message_handler(commands=['suball'])
 async def suball(message: types.Message):
     for key in list(subs.keys()):
         subs[key] = True
     await bot.send_message(message.chat.id, 'Теперь вы подписаны на рассылку о всех мероприятиях! 👍')
+
+# отписка от всех мероприятий
 
 @dp.message_handler(commands=['unsuball'])
 async def suball(message: types.Message):
@@ -232,6 +252,8 @@ async def suball(message: types.Message):
 # обработка событий #
 #####################
 
+# запросы на подписку
+
 @dp.callback_query_handler(text=list(subs.keys()))
 async def sub(call: types.CallbackQuery):
     if subs.get(call.data) == True:
@@ -239,6 +261,8 @@ async def sub(call: types.CallbackQuery):
     else:
         subs[call.data] = True
         await bot.send_message(call.message.chat.id, 'Теперь вы подписаны на рассылку новостей мероприятия!')
+
+# запросы на получение информации
 
 @dp.callback_query_handler(text=['Neuro', 'ItFest', 'OKK', 'IASF', 'IW', 'TC', 'VR', 'NIR'])
 async def linksHandler(call: types.CallbackQuery):
