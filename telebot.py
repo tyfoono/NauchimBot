@@ -1,7 +1,8 @@
- #Комманды:
+#Комманды:
 # - /list - вывод списка всех мероприятий
 # - /contacts - вывод контактов организаторов +
 # - /help - помощь
+# - /update - обновление данных о
 # - /suball - подписка на все мероприятия
 # - /unsuball - отписка от всех мероприятий
 
@@ -159,18 +160,6 @@ async def get_post(chat_id,key):
 # обработка сообщений #
 #######################
 
-@dp.message_handler(commands=['suball'])
-async def suball(message: types.Message):
-    for key in list(subs.keys()):
-        subs[key] = True
-    await bot.send_message(message.chat.id, 'Теперь вы подписаны на рассылку о всех мероприятиях! 👍')
-
-@dp.message_handler(commands=['unsuball'])
-async def suball(message: types.Message):
-    for key in list(subs.keys()):
-        subs[key] = False
-    await bot.send_message(message.chat.id, 'Теперь вы отписаны от рассылки о всех мероприятиях! 👎')
-
 @dp.message_handler(text=['/help', 'Путеводитель по боту 🧭'])
 def help(message: types.Message):
     text = 'Путеводитель по боту 🧭\n\n\n'
@@ -184,6 +173,8 @@ def help(message: types.Message):
     text +='   подписка на рассылку о всех мероприятиях\n\n'
     text +=' • команада "/unsuball":\n'
     text +='   отписка от рассылки о всех мероприятиях\n\n'
+    text +=' • команада "/bye":\n'
+    text +='   удаляет данные о пользователе из базы данных\n\n'
     bot.send_message(message.chat.id, text)
 
 @dp.message_handler(text=['/update', 'Проверить на наличие новых записей 💬'])
@@ -219,12 +210,23 @@ async def contacts(message: types.Message):
     text = f'Если у вас возникли какие-либо вопросы, {first_name} ,то вот наши контакты:\n\n • Группа ВКонтакте Научим.online https://vk.com/nauchim.online\n • Сайт с мероприятиями https://www.научим.online'
     await bot.send_message(chat_id, text)
 
-
 @dp.message_handler(text=['/list', 'Список мероприятий 🌟'])
 async def events(message: types.Message):
     chat_id = message.chat.id
     text = 'Вот список наших мероприятий: '
     await bot.send_message(chat_id, text, reply_markup=linksKb)
+
+@dp.message_handler(commands=['suball'])
+async def suball(message: types.Message):
+    for key in list(subs.keys()):
+        subs[key] = True
+    await bot.send_message(message.chat.id, 'Теперь вы подписаны на рассылку о всех мероприятиях! 👍')
+
+@dp.message_handler(commands=['unsuball'])
+async def suball(message: types.Message):
+    for key in list(subs.keys()):
+        subs[key] = False
+    await bot.send_message(message.chat.id, 'Теперь вы отписаны от рассылки о всех мероприятиях! 👎')
 
 #####################
 # обработка событий #
@@ -369,17 +371,6 @@ async def linksHandler(call: types.CallbackQuery):
 # запуск по расписанию #
 ########################
 
-async def scheduled_update():
-    for key in list(owners.keys()):
-        if subs.get('sub' + key) == True:
-            new = await get_post(chat_id, key)
-            if new == False:
-                await bot.send_message(chat_id, f'{first.get(key)}\n\nПока ничего нового...')
-    when_to_call = loop.time() + delay
-    loop.call_at(when_to_call, 1)
+#в разработке
 
-async def startup(dp):
-    asyncio.set_event_loop(loop)
-    asyncio.ensure_future(scheduled_update())
-
-executor.start_polling(dp, on_startup=startup)
+executor.start_polling(dp)
