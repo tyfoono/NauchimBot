@@ -17,12 +17,12 @@ sys.stdout.reconfigure(encoding='utf-8')
 
 # токены
 
-vk_token = '9dfa07419dfa07419dfa0741cd9d8619c999dfa9dfa0741ffae5478875654c94509d144'
+vk_token = 'token'
 chat_id = ''
 
 # инициализация телеграм бота
 
-bot = Bot(token='5123538287:AAHDRsRk9uBYQ_01WGIJcRmMd7xJNVZNWOI')
+bot = Bot(token='token')
 dp = Dispatcher(bot)
 
 # клавиатура главного меню
@@ -168,7 +168,7 @@ async def get_post(chat_id,key):
 # путеводитель
 
 @dp.message_handler(text=['/help', 'Путеводитель по боту 🧭'])
-def help(message: types.Message):
+async def help(message: types.Message):
     text = 'Путеводитель по боту 🧭\n\n\n'
     text +=' • кнопка "Список мероприятий" или команада "/list":\n'
     text +='   вывод списка мероприятий и информации о них\n\n'
@@ -182,7 +182,7 @@ def help(message: types.Message):
     text +='   отписка от рассылки о всех мероприятиях\n\n'
     text +=' • команада "/bye":\n'
     text +='   удаляет данные о пользователе из базы данных\n\n'
-    bot.send_message(message.chat.id, text)
+    await bot.send_message(message.chat.id, text)
 
 # обновление данных записей
 
