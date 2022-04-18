@@ -1,40 +1,39 @@
-#Комманды:
-# - /list - вывод списка всех мероприятий
-# - /contacts - вывод контактов организаторов +
-# - /help - помощь
-# - /update - обновление данных о
-# - /suball - подписка на все мероприятия
-# - /unsuball - отписка от всех мероприятий
-
 import sys
 import vk
-import asyncio
 from aiogram import Bot, types
 from aiogram.utils import executor
 from aiogram.dispatcher import Dispatcher
 import sqlite3
-from time import sleep
 
-loop = asyncio.new_event_loop()
-delay = 10.0
+# подключение базы данных
 
 connect = sqlite3.connect('users.db')
 cursor = connect.cursor()
 
+# починка ошибки юникода
+
 sys.stdin.reconfigure(encoding='utf-8')
 sys.stdout.reconfigure(encoding='utf-8')
+
+# токены
 
 vk_token = '9dfa07419dfa07419dfa0741cd9d8619c999dfa9dfa0741ffae5478875654c94509d144'
 chat_id = ''
 
+# инициализация телеграм бота
+
 bot = Bot(token='5123538287:AAHDRsRk9uBYQ_01WGIJcRmMd7xJNVZNWOI')
 dp = Dispatcher(bot)
+
+# клавиатура главного меню
 
 buttonList = types.KeyboardButton('Список мероприятий 🌟')
 buttonLinks = types.KeyboardButton('Контакты 🤝')
 buttonUpdate = types.KeyboardButton('Проверить на наличие новых записей 💬')
 buttonHelp = types.KeyboardButton('Путеводитель по боту 🧭')
 startKb = types.ReplyKeyboardMarkup(one_time_keyboard=True).row(buttonList).row(buttonLinks).row(buttonUpdate).row(buttonHelp)
+
+# клавиатура мероприятий
 
 linksKb = types.InlineKeyboardMarkup()
 linkNeuro = types.InlineKeyboardButton('🧠 «Нейрофест» - Всероссийский фестиваль нейротехнологий', callback_data='Neuro')
@@ -49,6 +48,8 @@ linksKb.row(linkNeuro).row(linkIW)
 linksKb.row(linkItFest).row(linkTC)
 linksKb.row(linkOKK).row(linkNIR)
 linksKb.row(linkIASF).row(linkVR)
+
+# словари для работы с вк
 
 tags = {
     'Neuro':'Нейрофест',
