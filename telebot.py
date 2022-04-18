@@ -14,7 +14,7 @@ from aiogram.dispatcher import Dispatcher
 import sqlite3
 from time import sleep
 
-loop = asyncio.get_event_loop()
+loop = asyncio.new_event_loop()
 delay = 10.0
 
 connect = sqlite3.connect('users.db')
@@ -31,7 +31,9 @@ dp = Dispatcher(bot)
 
 buttonList = types.KeyboardButton('Список мероприятий 🌟')
 buttonLinks = types.KeyboardButton('Контакты 🤝')
-startKb = types.ReplyKeyboardMarkup(one_time_keyboard=True).row(buttonList).row(buttonLinks)
+buttonUpdate = types.KeyboardButton('Проверить на наличие новых записей 💬')
+buttonHelp = types.KeyboardButton('Путеводитель по боту 🧭')
+startKb = types.ReplyKeyboardMarkup(one_time_keyboard=True).row(buttonList).row(buttonLinks).row(buttonUpdate).row(buttonHelp)
 
 linksKb = types.InlineKeyboardMarkup()
 linkNeuro = types.InlineKeyboardButton('🧠 «Нейрофест» - Всероссийский фестиваль нейротехнологий', callback_data='Neuro')
@@ -42,10 +44,10 @@ linkIW = types.InlineKeyboardButton('🔬 «Невидимый мир» - Все
 linkTC = types.InlineKeyboardButton('🌟 «TechnoCom» - Международный конкурс детских инженерных команд', callback_data='TC')
 linkVR = types.InlineKeyboardButton('🕶 VR/AR Fest - Международный фестиваль 3D-моделирования и программирования', callback_data='VR')
 linkNIR = types.InlineKeyboardButton('📖 Всероссийский конкурс научно-исследовательских работ', callback_data='NIR')
-linksKb.row(linkNeuro, linkIW)
-linksKb.row(linkItFest, linkTC)
-linksKb.row(linkOKK, linkNIR)
-linksKb.row(linkIASF, linkVR)
+linksKb.row(linkNeuro).row(linkIW)
+linksKb.row(linkItFest).row(linkTC)
+linksKb.row(linkOKK).row(linkNIR)
+linksKb.row(linkIASF).row(linkVR)
 
 tags = {
     'Neuro':'Нейрофест',
@@ -137,31 +139,58 @@ def get_name(chat_id):
 # получение последней записи со стены #
 #######################################
 
-
 async def get_post(chat_id,key):
-    session = vk.Session(access_token=vk_token) 
-    vk_api = vk.API(session)
-    new = False
-    owner_id = owners.get(key)
-    post = vk_api.wall.get(owner_id=owner_id, v=5.92, count=1, offset=0)['items'][0]
-    if post['id'] != lastId.get(key):  
-        if tags.get(key) in post['text']:
-            text = first.get(key) + '\n\n\n'
-            text += post['text']
-            lastId[key] = post['id']
-            new = True
-            await bot.send_message(chat_id, text) 
-    return new
+    if chat_id != '':
+        session = vk.Session(access_token=vk_token) 
+        vk_api = vk.API(session)
+        new = False
+        owner_id = owners.get(key)
+        post = vk_api.wall.get(owner_id=owner_id, v=5.92, count=1, offset=0)['items'][0]
+        if post['id'] != lastId.get(key):  
+            if tags.get(key) in post['text']:
+                text = first.get(key) + '\n\n\n'
+                text += post['text']
+                lastId[key] = post['id']
+                new = True
+                await bot.send_message(chat_id, text) 
+        return new
 
 #######################
 # обработка сообщений #
 #######################
 
-@dp.message_handler(commands=['update'])
+@dp.message_handler(commands=['suball'])
+async def suball(message: types.Message):
+    for key in list(subs.keys()):
+        subs[key] = True
+    await bot.send_message(message.chat.id, 'Теперь вы подписаны на рассылку о всех мероприятиях! 👍')
+
+@dp.message_handler(commands=['unsuball'])
+async def suball(message: types.Message):
+    for key in list(subs.keys()):
+        subs[key] = False
+    await bot.send_message(message.chat.id, 'Теперь вы отписаны от рассылки о всех мероприятиях! 👎')
+
+@dp.message_handler(text=['/help', 'Путеводитель по боту 🧭'])
+def help(message: types.Message):
+    text = 'Путеводитель по боту 🧭\n\n\n'
+    text +=' • кнопка "Список мероприятий" или команада "/list":\n'
+    text +='   вывод списка мероприятий и информации о них\n\n'
+    text +=' • кнопка "Контакты" или команада "/contacts":\n'
+    text +='   вывод контактов организаторов\n\n'
+    text +=' • кнопка "Проверить на наличие новых записей" или команада "/update":\n'
+    text +='   проверка групп в ВКонтакте на наличие записей по тегам и выводит текст последней записи\n\n'
+    text +=' • команада "/suball":\n'
+    text +='   подписка на рассылку о всех мероприятиях\n\n'
+    text +=' • команада "/unsuball":\n'
+    text +='   отписка от рассылки о всех мероприятиях\n\n'
+    bot.send_message(message.chat.id, text)
+
+@dp.message_handler(text=['/update', 'Проверить на наличие новых записей 💬'])
 async def update(message: types.Message):
     chat_id = message.chat.id
     for key in list(owners.keys()):
-        if sub.get('sub' + key) == True:
+        if subs.get('sub' + key) == True:
             new = await get_post(chat_id, key)
             if new == False:
                 await bot.send_message(chat_id, f'{first.get(key)}\nПока ничего нового...')
@@ -342,14 +371,15 @@ async def linksHandler(call: types.CallbackQuery):
 
 async def scheduled_update():
     for key in list(owners.keys()):
-        if sub.get('sub' + key) == True:
+        if subs.get('sub' + key) == True:
             new = await get_post(chat_id, key)
             if new == False:
-                await bot.send_message(chat_id, f'{first.get(key)}\nПока ничего нового...')
+                await bot.send_message(chat_id, f'{first.get(key)}\n\nПока ничего нового...')
     when_to_call = loop.time() + delay
-    loop.call_at(when_to_call)
+    loop.call_at(when_to_call, 1)
 
-def startup():
+async def startup(dp):
+    asyncio.set_event_loop(loop)
     asyncio.ensure_future(scheduled_update())
 
 executor.start_polling(dp, on_startup=startup)
