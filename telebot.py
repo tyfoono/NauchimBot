@@ -1,19 +1,21 @@
  #Комманды:
 # - /list - вывод списка всех мероприятий
-# - /contacts - вывод контактов организаторов
-# - /bye - удаление из базы данных
-# - /update - проверка на наличие новых записей
+# - /contacts - вывод контактов организаторов +
+# - /help - помощь
 # - /suball - подписка на все мероприятия
 # - /unsuball - отписка от всех мероприятий
 
 import sys
 import vk
-import aioschedule, asyncio
+import asyncio
 from aiogram import Bot, types
 from aiogram.utils import executor
 from aiogram.dispatcher import Dispatcher
 import sqlite3
 from time import sleep
+
+loop = asyncio.get_event_loop()
+delay = 10.0
 
 connect = sqlite3.connect('users.db')
 cursor = connect.cursor()
@@ -21,8 +23,8 @@ cursor = connect.cursor()
 sys.stdin.reconfigure(encoding='utf-8')
 sys.stdout.reconfigure(encoding='utf-8')
 
-vk_token = 'token'
-
+vk_token = '9dfa07419dfa07419dfa0741cd9d8619c999dfa9dfa0741ffae5478875654c94509d144'
+chat_id = ''
 
 bot = Bot(token='5123538287:AAHDRsRk9uBYQ_01WGIJcRmMd7xJNVZNWOI')
 dp = Dispatcher(bot)
@@ -136,7 +138,7 @@ def get_name(chat_id):
 #######################################
 
 
-async def get_post(chat_id, key):
+async def get_post(chat_id,key):
     session = vk.Session(access_token=vk_token) 
     vk_api = vk.API(session)
     new = False
@@ -338,15 +340,16 @@ async def linksHandler(call: types.CallbackQuery):
 # запуск по расписанию #
 ########################
 
+async def scheduled_update():
+    for key in list(owners.keys()):
+        if sub.get('sub' + key) == True:
+            new = await get_post(chat_id, key)
+            if new == False:
+                await bot.send_message(chat_id, f'{first.get(key)}\nПока ничего нового...')
+    when_to_call = loop.time() + delay
+    loop.call_at(when_to_call)
 
-async def scheduler():
-    aioschedule.every(30).seconds.do(get_post)
-    while True:
-        await aioschedule.run_pending()
-        await asyncio.sleep(1)
+def startup():
+    asyncio.ensure_future(scheduled_update())
 
-async def on_startup(dp):
-    asyncio.create_task(scheduler())
-
-if __name__ == '__main__':
-    executor.start_polling(dp, on_startup=on_startup)
+executor.start_polling(dp, on_startup=startup)
