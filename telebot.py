@@ -17,12 +17,12 @@ sys.stdout.reconfigure(encoding='utf-8')
 
 # токены
 
-vk_token = '9dfa07419dfa07419dfa0741cd9d8619c999dfa9dfa0741ffae5478875654c94509d144'
+vk_token = 'token'
 chat_id = ''
 
 # инициализация телеграм бота
 
-bot = Bot(token='5123538287:AAHDRsRk9uBYQ_01WGIJcRmMd7xJNVZNWOI')
+bot = Bot(token='token')
 dp = Dispatcher(bot)
 
 # клавиатура главного меню
